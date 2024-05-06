@@ -3,7 +3,8 @@ package v1
 import (
 	"avito-backend-2024-trainee/internal/repo/repos"
 	"avito-backend-2024-trainee/internal/service"
-	banner2 "avito-backend-2024-trainee/internal/service/banner"
+	bannerService "avito-backend-2024-trainee/internal/service/banner"
+	"avito-backend-2024-trainee/pkg/middleware/auth"
 	"context"
 	"errors"
 	"github.com/gofiber/fiber/v2"
@@ -21,7 +22,10 @@ func NewBannerRoutes(router *fiber.Router, bannerService service.Banner) {
 
 func (r *bannerRoutes) create() fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		params := new(banner2.GetUserBannerInput)
+		// TODO: реализовать логику
+		value := c.Locals(auth.ROLE_CTX_FIELD).(auth.Role)
+		print(value)
+		params := new(bannerService.GetUserBannerInput)
 		if err := c.QueryParser(params); err != nil {
 			return err
 		}
