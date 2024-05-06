@@ -2,7 +2,7 @@ package v1
 
 import (
 	"avito-backend-2024-trainee/internal/service"
-	"github.com/gofiber/fiber/v3"
+	"github.com/gofiber/fiber/v2"
 )
 
 func NewRouter(app *fiber.App, services *service.Services) {

@@ -1,17 +1,25 @@
 package service
 
+import (
+	"avito-backend-2024-trainee/internal/entity"
+	"avito-backend-2024-trainee/internal/repo"
+	"avito-backend-2024-trainee/internal/service/banner"
+	"context"
+)
+
 type Services struct {
 	Banner Banner
 }
-type ServiceDependencies struct {
+type Dependencies struct {
+	Repositories repo.Repositories
 }
 
 type Banner interface {
-	GetUserBanner()
+	GetUserBanner(ctx context.Context, input *banner.GetUserBannerInput) (entity.BannerWithTag, error)
 }
 
-func NewServices(deps ServiceDependencies) *Services {
+func NewServices(deps Dependencies) *Services {
 	return &Services{
-		Banner: NewBannerService(),
+		Banner: banner.NewBannerService(deps.Repositories.Banner),
 	}
 }

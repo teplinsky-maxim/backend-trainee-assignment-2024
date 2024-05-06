@@ -1,19 +1,21 @@
 package repo
 
 import (
+	"avito-backend-2024-trainee/internal/entity"
 	"avito-backend-2024-trainee/internal/repo/repos"
+	"avito-backend-2024-trainee/pkg/postgresql"
 	"context"
 )
 
 type Banner interface {
-	GetUserBanner(ctx context.Context, tagId int, featureId int, useLatestVersion bool)
+	GetUserBanner(ctx context.Context, tagId int, featureId int, useLatestVersion bool) (entity.BannerWithTag, error)
 }
 type Repositories struct {
 	Banner
 }
 
-func NewRepositories() *Repositories {
+func NewRepositories(postgres postgresql.Postgresql) *Repositories {
 	return &Repositories{
-		Banner: repos.NewBannerRepo(),
+		Banner: repos.NewBannerRepo(postgres),
 	}
 }

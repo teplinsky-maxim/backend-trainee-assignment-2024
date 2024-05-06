@@ -5,5 +5,5 @@ import (
 )
 
 func main() {
-	app.Run()
+	app.Run("config/config.yaml")
 }
