@@ -7,10 +7,67 @@ import (
 	"avito-backend-2024-trainee/pkg/postgresql"
 	"context"
 	"github.com/stretchr/testify/assert"
+	"gorm.io/gorm"
 	"testing"
 )
 
 func TestGetUserBanner(t *testing.T) {
+	tests := []struct {
+		name           string
+		tagId          uint
+		featureId      uint
+		useLatestVer   bool
+		expectedErr    error
+		bannerIsActive bool
+		userRole       auth.Role
+	}{
+		{
+			name:           "valid banner",
+			tagId:          uint(1),
+			featureId:      uint(1),
+			useLatestVer:   false,
+			expectedErr:    nil,
+			bannerIsActive: true,
+			userRole:       auth.USER,
+		},
+		{
+			name:           "banner not found 1",
+			tagId:          uint(68768687),
+			featureId:      uint(1),
+			useLatestVer:   false,
+			expectedErr:    ErrBannerNotFound,
+			bannerIsActive: true,
+			userRole:       auth.USER,
+		},
+		{
+			name:           "banner not found 1",
+			tagId:          uint(1),
+			featureId:      uint(12398123),
+			useLatestVer:   false,
+			expectedErr:    ErrBannerNotFound,
+			bannerIsActive: true,
+			userRole:       auth.USER,
+		},
+		{
+			name:           "banner is not active",
+			tagId:          uint(2),
+			featureId:      uint(2),
+			useLatestVer:   false,
+			expectedErr:    BannerIsNotActiveError,
+			bannerIsActive: false,
+			userRole:       auth.USER,
+		},
+		{
+			name:           "admin can access not active banner",
+			tagId:          uint(2),
+			featureId:      uint(2),
+			useLatestVer:   false,
+			expectedErr:    BannerIsNotActiveError,
+			bannerIsActive: false,
+			userRole:       auth.ADMIN,
+		},
+	}
+
 	conf, err := config.NewConfigWithDiscover(nil)
 	if err != nil {
 		panic(err)
@@ -19,28 +76,54 @@ func TestGetUserBanner(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	sepCon := postgresql.Postgresql(connection)
-	bannerRepo := NewBannerRepo(sepCon)
-	featureId := uint(1)
-	tagId := uint(1)
+	bannerRepo := NewBannerRepo(postgresql.Postgresql(connection))
+	statement := &gorm.Statement{
+		DB: connection.DB,
+	}
+	_ = statement.Parse(entity.Banner{})
+	connection.SetUp(statement.Schema.Table)
+	_ = statement.Parse(entity.BannerTag{})
+	connection.SetUp(statement.Schema.Table)
+
 	banner := entity.Banner{
 		Title:     "Test banner",
 		Text:      "Test text",
 		Url:       "https://123.com",
-		FeatureId: featureId,
+		FeatureId: 1,
 		IsActive:  true,
 	}
 	connection.DB.Create(&banner)
 	connection.DB.Create(&entity.BannerTag{
-		BannerId: int(banner.ID),
-		TagId:    int(tagId),
+		BannerId: banner.ID,
+		TagId:    1,
 	})
-	ctx := context.WithValue(context.Background(), auth.RoleCtxField, auth.USER)
-	userBanner, err := bannerRepo.GetUserBanner(ctx, int(tagId), int(featureId), false)
-	if err != nil {
-		return
+
+	banner2 := entity.Banner{
+		Title:     "Test banner",
+		Text:      "Test text",
+		Url:       "https://123.com",
+		FeatureId: 2,
+		IsActive:  false,
 	}
-	assert.NoError(t, err)
-	assert.Equal(t, int(userBanner.Tag), int(tagId))
-	assert.Equal(t, int(userBanner.FeatureId), int(featureId))
+	connection.DB.Create(&banner2)
+	connection.DB.Create(&entity.BannerTag{
+		BannerId: banner2.ID,
+		TagId:    2,
+	})
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx := context.WithValue(context.Background(), auth.RoleCtxField, tt.userRole)
+			userBanner, err := bannerRepo.GetUserBanner(ctx, tt.tagId, tt.featureId, tt.useLatestVer)
+			if err != nil {
+				assert.Equal(t, tt.expectedErr, err)
+			} else {
+				if tt.userRole == auth.ADMIN {
+					assert.Equal(t, banner2.ID, userBanner.ID)
+				} else {
+					assert.Equal(t, banner.ID, userBanner.ID)
+				}
+			}
+		})
+	}
 }

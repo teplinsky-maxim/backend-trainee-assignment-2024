@@ -19,7 +19,7 @@ type BannerRepo struct {
 	postgres postgresql.Postgresql
 }
 
-func (b *BannerRepo) GetUserBanner(ctx context.Context, tagId int, featureId int, useLatestVersion bool) (entity.BannerWithTag, error) {
+func (b *BannerRepo) GetUserBanner(ctx context.Context, tagId uint, featureId uint, useLatestVersion bool) (entity.BannerWithTag, error) {
 	query := `
 SELECT b.id, b.title, b.text, b.url, b.feature_id, bt.tag_id as tag, b.is_active
 FROM banners b

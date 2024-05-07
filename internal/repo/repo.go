@@ -8,7 +8,7 @@ import (
 )
 
 type Banner interface {
-	GetUserBanner(ctx context.Context, tagId int, featureId int, useLatestVersion bool) (entity.BannerWithTag, error)
+	GetUserBanner(ctx context.Context, tagId uint, featureId uint, useLatestVersion bool) (entity.BannerWithTag, error)
 }
 type Repositories struct {
 	Banner

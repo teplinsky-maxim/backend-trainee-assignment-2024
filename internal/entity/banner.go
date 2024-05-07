@@ -11,5 +11,5 @@ type Banner struct {
 
 type BannerWithTag struct {
 	Banner
-	Tag int
+	Tag uint
 }

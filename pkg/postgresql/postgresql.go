@@ -75,9 +75,9 @@ func (r *Postgresql) Migrate() error {
 }
 
 func (r *PostgresqlTest) SetUp(tableName string) {
-	r.DB.Exec("TRUNCATE $1", tableName)
+	r.DB.Exec("TRUNCATE " + tableName)
 }
 
 func (r *PostgresqlTest) TearDown(tableName string) {
-	r.DB.Exec("TRUNCATE $1", tableName)
+	r.DB.Exec("TRUNCATE " + tableName)
 }

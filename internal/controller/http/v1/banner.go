@@ -23,14 +23,12 @@ func NewBannerRoutes(router *fiber.Router, bannerService service.Banner) {
 
 func (r *bannerRoutes) getUserBannerHandler() fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		// TODO: реализовать логику
-		value := c.Locals(auth.RoleCtxField).(auth.Role)
-		print(value)
 		params := new(bannerService.GetUserBannerInput)
 		if err := c.QueryParser(params); err != nil {
 			return err
 		}
 
+		value := c.Locals(auth.RoleCtxField).(auth.Role)
 		ctx := context.WithValue(context.Background(), auth.RoleCtxField, value)
 		banner, err := r.bannerService.GetUserBanner(ctx, params)
 		if err != nil {
