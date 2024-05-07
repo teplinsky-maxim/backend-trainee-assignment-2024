@@ -8,6 +8,7 @@ import (
 	"context"
 	"errors"
 	"github.com/gofiber/fiber/v2"
+	"net/http"
 )
 
 type bannerRoutes struct {
@@ -17,10 +18,10 @@ type bannerRoutes struct {
 func NewBannerRoutes(router *fiber.Router, bannerService service.Banner) {
 	r := &bannerRoutes{bannerService: bannerService}
 
-	(*router).Add("GET", "/user_banner/", r.create())
+	(*router).Add("GET", "/user_banner/", r.getUserBannerHandler())
 }
 
-func (r *bannerRoutes) create() fiber.Handler {
+func (r *bannerRoutes) getUserBannerHandler() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		// TODO: реализовать логику
 		value := c.Locals(auth.ROLE_CTX_FIELD).(auth.Role)
@@ -29,21 +30,19 @@ func (r *bannerRoutes) create() fiber.Handler {
 		if err := c.QueryParser(params); err != nil {
 			return err
 		}
-		banner, err := r.bannerService.GetUserBanner(context.TODO(), params)
+
+		ctx := context.WithValue(context.Background(), auth.ROLE_CTX_FIELD, value)
+		banner, err := r.bannerService.GetUserBanner(ctx, params)
 		if err != nil {
 			if errors.Is(repos.ErrBannerNotFound, err) {
-				_ = c.SendStatus(404)
-				return nil
+				return c.SendStatus(http.StatusNotFound)
 			} else if errors.Is(repos.BannerScanError, err) {
-				_ = c.SendStatus(500)
-				return nil
+				return c.SendStatus(http.StatusInternalServerError)
+			} else if errors.Is(repos.BannerIsNotActiveError, err) {
+				return c.SendStatus(http.StatusForbidden)
 			}
 			return err
 		}
-		err = c.JSON(banner)
-		if err != nil {
-			_ = c.SendStatus(500)
-		}
-		return nil
+		return c.JSON(banner)
 	}
 }

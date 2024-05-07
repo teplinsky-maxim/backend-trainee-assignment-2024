@@ -20,10 +20,10 @@ func Run(configPath string) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	err = postgres.Migrate()
-	if err != nil {
-		log.Fatal(err)
-	}
+	//err = postgres.Migrate()
+	//if err != nil {
+	//	log.Fatal(err)
+	//}
 
 	repositories := repo.NewRepositories(postgres)
 

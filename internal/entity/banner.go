@@ -6,6 +6,7 @@ type Banner struct {
 	Text      string
 	Url       string
 	FeatureId uint
+	IsActive  bool
 }
 
 type BannerWithTag struct {
