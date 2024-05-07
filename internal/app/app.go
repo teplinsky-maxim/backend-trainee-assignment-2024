@@ -11,7 +11,7 @@ import (
 )
 
 func Run(configPath string) {
-	conf, err := config.NewConfig(configPath)
+	conf, err := config.NewConfig(nil)
 	if err != nil {
 		log.Fatal(err)
 	}

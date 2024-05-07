@@ -14,7 +14,7 @@ const (
 )
 
 const (
-	ROLE_CTX_FIELD = "user_role"
+	RoleCtxField = "user_role"
 )
 
 var (
@@ -29,7 +29,7 @@ func AuthMiddleware(c *fiber.Ctx) error {
 		return c.SendStatus(401)
 	}
 
-	c.Locals(ROLE_CTX_FIELD, role)
+	c.Locals(RoleCtxField, role)
 	return c.Next()
 }
 

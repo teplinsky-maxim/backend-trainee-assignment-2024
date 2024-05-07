@@ -34,7 +34,7 @@ WHERE bt.tag_id = $1 AND b.feature_id = $2;
 		return entity.BannerWithTag{}, ErrBannerNotFound
 	}
 	if result.IsActive == false {
-		userRole := ctx.Value(auth.ROLE_CTX_FIELD).(auth.Role)
+		userRole := ctx.Value(auth.RoleCtxField).(auth.Role)
 		if userRole == auth.ADMIN {
 			return result, nil
 		} else if userRole == auth.USER {

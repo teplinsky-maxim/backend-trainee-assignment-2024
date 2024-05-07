@@ -3,7 +3,11 @@ package config
 import (
 	"fmt"
 	"github.com/ilyakaznacheev/cleanenv"
+	"os"
+	"path/filepath"
 )
+
+const DefaultConfigPath = "config/config.yaml"
 
 type (
 	Config struct {
@@ -19,10 +23,14 @@ type (
 	}
 )
 
-func NewConfig(configPath string) (*Config, error) {
+func NewConfig(configPath *string) (*Config, error) {
+	if configPath == nil {
+		configPath = new(string)
+		*configPath = DefaultConfigPath
+	}
 	cfg := Config{}
 
-	err := cleanenv.ReadConfig(configPath, &cfg)
+	err := cleanenv.ReadConfig(*configPath, &cfg)
 	if err != nil {
 		return nil, fmt.Errorf("error reading config file: %w", err)
 	}
@@ -33,4 +41,22 @@ func NewConfig(configPath string) (*Config, error) {
 	}
 
 	return &cfg, nil
+}
+
+func NewConfigWithDiscover(configPath *string) (*Config, error) {
+	var currentPath string
+	if configPath == nil {
+		configPath = new(string)
+		currentPath = DefaultConfigPath
+	} else {
+		currentPath = *configPath
+	}
+	for tries := 10; tries > 0; tries-- {
+		if _, err := os.Stat(currentPath); err == nil {
+			config, err := NewConfig(&currentPath)
+			return config, err
+		}
+		currentPath = filepath.Join("..", currentPath)
+	}
+	return nil, fmt.Errorf("could not discover config")
 }
