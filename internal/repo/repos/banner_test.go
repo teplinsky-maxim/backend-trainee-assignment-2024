@@ -3,11 +3,11 @@ package repos
 import (
 	"avito-backend-2024-trainee/config"
 	"avito-backend-2024-trainee/internal/entity"
+	"avito-backend-2024-trainee/internal/utils/database"
 	"avito-backend-2024-trainee/pkg/middleware/auth"
 	"avito-backend-2024-trainee/pkg/postgresql"
 	"context"
 	"github.com/stretchr/testify/assert"
-	"gorm.io/gorm"
 	"testing"
 )
 
@@ -77,13 +77,11 @@ func TestGetUserBanner(t *testing.T) {
 		panic(err)
 	}
 	bannerRepo := NewBannerRepo(postgresql.Postgresql(connection))
-	statement := &gorm.Statement{
-		DB: connection.DB,
-	}
-	_ = statement.Parse(entity.Banner{})
-	connection.SetUp(statement.Schema.Table)
-	_ = statement.Parse(entity.BannerTag{})
-	connection.SetUp(statement.Schema.Table)
+
+	tableName, _ := database.GetTableName(postgresql.Postgresql(connection), entity.Banner{})
+	connection.SetUp(tableName)
+	tableName, _ = database.GetTableName(postgresql.Postgresql(connection), entity.BannerTag{})
+	connection.SetUp(tableName)
 
 	banner := entity.Banner{
 		Title:     "Test banner",

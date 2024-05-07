@@ -18,6 +18,14 @@ func (b BannerService) GetUserBanner(ctx context.Context, input *GetUserBannerIn
 	return result, nil
 }
 
+func (b BannerService) GetBanner(ctx context.Context, input *GetBannerInput) ([]entity.BannerWithTags, error) {
+	result, err := b.bannerRepo.GetBanner(ctx, input.TagId, input.FeatureId, input.Limit, input.Offset)
+	if err != nil {
+		return []entity.BannerWithTags{}, err
+	}
+	return result, nil
+}
+
 func NewBannerService(bannerRepo repo.Banner) *BannerService {
 	return &BannerService{
 		bannerRepo: bannerRepo,

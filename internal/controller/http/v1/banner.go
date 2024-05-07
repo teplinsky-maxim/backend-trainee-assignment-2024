@@ -19,17 +19,18 @@ func NewBannerRoutes(router *fiber.Router, bannerService service.Banner) {
 	r := &bannerRoutes{bannerService: bannerService}
 
 	(*router).Add("GET", "/user_banner/", r.getUserBannerHandler())
+	(*router).Add("GET", "/banner/", r.getBannerHandler())
 }
 
 func (r *bannerRoutes) getUserBannerHandler() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		params := new(bannerService.GetUserBannerInput)
 		if err := c.QueryParser(params); err != nil {
-			return err
+			return c.SendStatus(http.StatusBadRequest)
 		}
 
-		value := c.Locals(auth.RoleCtxField).(auth.Role)
-		ctx := context.WithValue(context.Background(), auth.RoleCtxField, value)
+		role := c.Locals(auth.RoleCtxField).(auth.Role)
+		ctx := context.WithValue(context.Background(), auth.RoleCtxField, role)
 		banner, err := r.bannerService.GetUserBanner(ctx, params)
 		if err != nil {
 			if errors.Is(repos.ErrBannerNotFound, err) {
@@ -42,5 +43,24 @@ func (r *bannerRoutes) getUserBannerHandler() fiber.Handler {
 			return err
 		}
 		return c.JSON(banner)
+	}
+}
+
+func (r *bannerRoutes) getBannerHandler() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		params := new(bannerService.GetBannerInput)
+		if err := c.QueryParser(params); err != nil {
+			return c.SendStatus(http.StatusBadRequest)
+		}
+
+		role := c.Locals(auth.RoleCtxField).(auth.Role)
+		if role != auth.ADMIN {
+			return c.SendStatus(http.StatusUnauthorized)
+		}
+		banners, err := r.bannerService.GetBanner(context.TODO(), params)
+		if err != nil {
+			return err
+		}
+		return c.JSON(banners)
 	}
 }

@@ -13,3 +13,8 @@ type BannerWithTag struct {
 	Banner
 	Tag uint
 }
+
+type BannerWithTags struct {
+	Banner
+	Tags []uint
+}
