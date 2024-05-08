@@ -12,6 +12,7 @@ type Banner interface {
 	GetBanner(ctx context.Context, tagId, featureId, offset, limit *uint) ([]entity.BannerWithTags, error)
 	CreateBanner(ctx context.Context, tagIds []uint, featureId uint, title, text, url string, isActive bool) (entity.BannerId, error)
 	UpdateBanner(ctx context.Context, tagIds []uint, featureId uint, title, text, url string, isActive bool, bannerId uint) error
+	DeleteBanner(ctx context.Context, bannerId uint) error
 }
 type Repositories struct {
 	Banner

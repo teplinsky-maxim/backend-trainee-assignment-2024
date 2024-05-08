@@ -27,3 +27,6 @@ type CreateBannerInput struct {
 type UpdateBannerInput struct {
 	CreateBannerInput
 }
+
+type DeleteBannerInput struct {
+}

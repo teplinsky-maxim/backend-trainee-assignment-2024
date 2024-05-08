@@ -19,6 +19,7 @@ type Banner interface {
 	GetBanner(ctx context.Context, input *banner.GetBannerInput) ([]entity.BannerWithTags, error)
 	CreateBanner(ctx context.Context, input *banner.CreateBannerInput) (entity.BannerId, error)
 	UpdateBanner(ctx context.Context, input *banner.UpdateBannerInput, bannerId uint) error
+	DeleteBanner(ctx context.Context, input *banner.DeleteBannerInput, bannerId uint) error
 }
 
 func NewServices(deps Dependencies) *Services {

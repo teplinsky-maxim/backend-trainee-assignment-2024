@@ -140,3 +140,7 @@ func TestUpdateBanner(t *testing.T) {
 	//проверить разные значения
 	//упор на корнер-кейсы с тэгами
 }
+
+func TestDeleteBanner(t *testing.T) {
+	//разные значения
+}

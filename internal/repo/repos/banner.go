@@ -265,6 +265,29 @@ func fetchBannersIds(bannersIds []uint, db *gorm.DB) (map[uint][]uint, error) {
 	return tagMap, nil
 }
 
+func (b *BannerRepo) DeleteBanner(ctx context.Context, bannerId uint) error {
+	tx := b.postgres.DB.Begin()
+
+	var banner entity.Banner
+	err := tx.Clauses(clause.Returning{}).Where("id = ?", bannerId).Delete(&banner).Error
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+	if banner.ID != bannerId {
+		return ErrBannerNotFound
+	}
+
+	err = tx.Where("banner_id = ?", bannerId).Delete(entity.BannerTag{}).Error
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	tx.Commit()
+	return nil
+}
+
 func NewBannerRepo(postgres postgresql.Postgresql) *BannerRepo {
 	return &BannerRepo{
 		postgres: postgres,

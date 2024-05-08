@@ -46,6 +46,11 @@ func (b BannerService) UpdateBanner(ctx context.Context, input *UpdateBannerInpu
 	return err
 }
 
+func (b BannerService) DeleteBanner(ctx context.Context, input *DeleteBannerInput, bannerId uint) error {
+	err := b.bannerRepo.DeleteBanner(ctx, bannerId)
+	return err
+}
+
 func NewBannerService(bannerRepo repo.Banner) *BannerService {
 	return &BannerService{
 		bannerRepo: bannerRepo,

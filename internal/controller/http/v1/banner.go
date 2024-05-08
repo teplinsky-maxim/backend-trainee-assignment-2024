@@ -22,6 +22,7 @@ func NewBannerRoutes(router *fiber.Router, bannerService service.Banner) {
 	(*router).Add("GET", "/banner/", r.getBannerHandler())
 	(*router).Add("POST", "/banner/", r.createBannerHandler())
 	(*router).Add("PATCH", "/banner/:id", r.updateBannerHandler())
+	(*router).Add("DELETE", "/banner/:id", r.deleteBannerHandler())
 }
 
 func (r *bannerRoutes) getUserBannerHandler() fiber.Handler {
@@ -102,6 +103,27 @@ func (r *bannerRoutes) updateBannerHandler() fiber.Handler {
 			return c.SendStatus(http.StatusUnauthorized)
 		}
 		err = r.bannerService.UpdateBanner(context.TODO(), body, uint(existingBannerId))
+		if errors.Is(err, repos.ErrBannerNotFound) {
+			return c.SendStatus(http.StatusNotFound)
+		}
+		return err
+	}
+}
+
+func (r *bannerRoutes) deleteBannerHandler() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		existingBannerId, err := c.ParamsInt("id", -1)
+		if existingBannerId == -1 || err != nil {
+			return c.SendStatus(http.StatusBadRequest)
+		}
+		role := c.Locals(auth.RoleCtxField).(auth.Role)
+		if role != auth.ADMIN {
+			return c.SendStatus(http.StatusUnauthorized)
+		}
+		err = r.bannerService.DeleteBanner(context.TODO(), &bannerService.DeleteBannerInput{}, uint(existingBannerId))
+		if err == nil {
+			return c.SendStatus(http.StatusNoContent)
+		}
 		if errors.Is(err, repos.ErrBannerNotFound) {
 			return c.SendStatus(http.StatusNotFound)
 		}
