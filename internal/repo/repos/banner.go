@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"github.com/samber/lo"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 	"strconv"
 	"strings"
 )
@@ -135,17 +136,20 @@ func (b *BannerRepo) CreateBanner(ctx context.Context, tagIds []uint, featureId 
 
 func (b *BannerRepo) UpdateBanner(ctx context.Context, tagIds []uint, featureId uint, title, text, url string, isActive bool, bannerId uint) error {
 	tx := b.postgres.DB.Begin()
-	err := tx.Model(entity.Banner{}).Where("id = ?", bannerId).Updates(entity.Banner{
+	var banner entity.Banner
+	err := tx.Model(&banner).Clauses(clause.Returning{}).Where("id = ?", bannerId).Updates(entity.Banner{
 		Title:     title,
 		Text:      text,
 		Url:       url,
 		FeatureId: featureId,
 		IsActive:  isActive,
 	}).Error
-
 	if err != nil {
 		tx.Rollback()
 		return err
+	}
+	if banner.ID != bannerId {
+		return ErrBannerNotFound
 	}
 
 	tagMap, err := fetchBannersIds([]uint{bannerId}, b.postgres.DB)
@@ -166,13 +170,11 @@ func (b *BannerRepo) UpdateBanner(ctx context.Context, tagIds []uint, featureId 
 		_, exists := tagIdsMap[item]
 		return !exists
 	})
-	fmt.Printf("%v\n", tagsToDelete)
 
 	tagsToCreate := lo.Filter(tagIds, func(item uint, _ int) bool {
 		_, exists := currentBannerTagsMap[item]
 		return !exists
 	})
-	fmt.Printf("%v\n", tagsToCreate)
 
 	minLen := min(len(tagsToCreate), len(tagsToDelete))
 	maxLen := max(len(tagsToCreate), len(tagsToDelete))

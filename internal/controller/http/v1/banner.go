@@ -102,6 +102,9 @@ func (r *bannerRoutes) updateBannerHandler() fiber.Handler {
 			return c.SendStatus(http.StatusUnauthorized)
 		}
 		err = r.bannerService.UpdateBanner(context.TODO(), body, uint(existingBannerId))
+		if errors.Is(err, repos.ErrBannerNotFound) {
+			return c.SendStatus(http.StatusNotFound)
+		}
 		return err
 	}
 }
