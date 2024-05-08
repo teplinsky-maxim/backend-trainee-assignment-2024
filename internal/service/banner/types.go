@@ -23,3 +23,7 @@ type CreateBannerInput struct {
 	} `json:"content"`
 	IsActive bool `json:"is_active"`
 }
+
+type UpdateBannerInput struct {
+	CreateBannerInput
+}

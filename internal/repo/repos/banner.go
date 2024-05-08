@@ -7,7 +7,11 @@ import (
 	"avito-backend-2024-trainee/pkg/postgresql"
 	"context"
 	"errors"
+	"fmt"
+	"github.com/samber/lo"
+	"gorm.io/gorm"
 	"strconv"
+	"strings"
 )
 
 var (
@@ -80,17 +84,9 @@ func (b *BannerRepo) GetBanner(ctx context.Context, tagId, featureId, limit, off
 		bannerIDs = append(bannerIDs, banner.ID)
 	}
 
-	// Создать tmp-структуру чтобы зафетчить только tagId?
-	var bannerTags []entity.BannerTag
-	q = b.postgres.DB.Table("banner_tags").Where("banner_id IN (?)", bannerIDs)
-	err := q.Scan(&bannerTags).Error
+	tagMap, err := fetchBannersIds(bannerIDs, b.postgres.DB)
 	if err != nil {
 		return []entity.BannerWithTags{}, err
-	}
-
-	tagMap := make(map[uint][]uint)
-	for _, bt := range bannerTags {
-		tagMap[bt.BannerId] = append(tagMap[bt.BannerId], bt.TagId)
 	}
 
 	var result []entity.BannerWithTags
@@ -135,6 +131,136 @@ func (b *BannerRepo) CreateBanner(ctx context.Context, tagIds []uint, featureId 
 		return entity.BannerId{}, err
 	}
 	return entity.BannerId{ID: banner.ID}, nil
+}
+
+func (b *BannerRepo) UpdateBanner(ctx context.Context, tagIds []uint, featureId uint, title, text, url string, isActive bool, bannerId uint) error {
+	tx := b.postgres.DB.Begin()
+	err := tx.Model(entity.Banner{}).Where("id = ?", bannerId).Updates(entity.Banner{
+		Title:     title,
+		Text:      text,
+		Url:       url,
+		FeatureId: featureId,
+		IsActive:  isActive,
+	}).Error
+
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	tagMap, err := fetchBannersIds([]uint{bannerId}, b.postgres.DB)
+	if err != nil {
+		return err
+	}
+
+	tagIdsMap := lo.SliceToMap(tagIds, func(item uint) (uint, bool) {
+		return item, true
+	})
+
+	currentBannerTags := tagMap[bannerId]
+	currentBannerTagsMap := lo.SliceToMap(currentBannerTags, func(item uint) (uint, bool) {
+		return item, true
+	})
+
+	tagsToDelete := lo.Filter(currentBannerTags, func(item uint, _ int) bool {
+		_, exists := tagIdsMap[item]
+		return !exists
+	})
+	fmt.Printf("%v\n", tagsToDelete)
+
+	tagsToCreate := lo.Filter(tagIds, func(item uint, _ int) bool {
+		_, exists := currentBannerTagsMap[item]
+		return !exists
+	})
+	fmt.Printf("%v\n", tagsToCreate)
+
+	minLen := min(len(tagsToCreate), len(tagsToDelete))
+	maxLen := max(len(tagsToCreate), len(tagsToDelete))
+	oldToNew := make(map[uint]uint, minLen)
+	for i := 0; i < minLen; i++ {
+		oldToNew[tagsToDelete[i]] = tagsToCreate[i]
+	}
+
+	updateStmt := generateUpdateCaseStatementsWithQuery(oldToNew, "banner_tags", "tag_id")
+	err = tx.Exec(updateStmt).Error
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	if maxLen-minLen == 0 {
+		return nil
+	}
+
+	if len(tagsToDelete) > len(tagsToCreate) {
+		tagsLeft := tagsToDelete[maxLen-minLen:]
+		err = tx.Model(entity.BannerTag{}).Where("tag_id IN (?)", tagsLeft).Delete(&entity.BannerTag{}).Error
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
+	} else {
+		tagsLeft := tagsToCreate[maxLen-minLen:]
+		bannerTags := make([]entity.BannerTag, maxLen-minLen)
+		for idx, tagId := range tagsLeft {
+			bannerTags[idx] = entity.BannerTag{
+				BannerId: bannerId,
+				TagId:    tagId,
+			}
+		}
+		// Здесь будет создана транзакция еще одна (на batch insert), но она тоже должна откатиться
+		// в случае отката первоначальной транзакции
+		err = tx.Create(bannerTags).Error
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
+
+	tx.Commit()
+	return nil
+}
+
+func generateUpdateCaseStatementsWithQuery(oldToNew map[uint]uint, bannerTableName, bannerIdColName string) string {
+	q := fmt.Sprintf(`
+UPDATE %s SET %s = CASE
+`, bannerTableName, bannerIdColName)
+	cases := make([]string, len(oldToNew))
+	i := 0
+	for oldId, newId := range oldToNew {
+		cases[i] = fmt.Sprintf("WHEN %s = %d THEN %d", bannerIdColName, oldId, newId)
+		i++
+	}
+	q = q + strings.Join(cases, " ")
+	keys := convertSliceToSQLSyntax(lo.Keys(oldToNew))
+	q = q + fmt.Sprintf(" END WHERE %s.%s IN %v", bannerTableName, bannerIdColName, keys)
+	return q
+}
+
+func convertSliceToSQLSyntax(slice []uint) string {
+	var values []string
+	for _, val := range slice {
+		values = append(values, fmt.Sprintf("%d", val))
+	}
+	return fmt.Sprintf("(%s)", strings.Join(values, ", "))
+}
+
+func fetchBannersIds(bannersIds []uint, db *gorm.DB) (map[uint][]uint, error) {
+	var bannerTags []entity.BannerTag
+	q := db.Table("banner_tags").Where("banner_id IN (?)", bannersIds)
+	err := q.Scan(&bannerTags).Error
+	if err != nil {
+		return map[uint][]uint{}, err
+	}
+
+	tagMap := make(map[uint][]uint, len(bannersIds))
+	for _, bannerId := range bannersIds {
+		tagMap[bannerId] = []uint{}
+	}
+	for _, bt := range bannerTags {
+		tagMap[bt.BannerId] = append(tagMap[bt.BannerId], bt.TagId)
+	}
+	return tagMap, nil
 }
 
 func NewBannerRepo(postgres postgresql.Postgresql) *BannerRepo {

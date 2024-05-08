@@ -38,6 +38,14 @@ func (b BannerService) CreateBanner(ctx context.Context, input *CreateBannerInpu
 	return result, nil
 }
 
+func (b BannerService) UpdateBanner(ctx context.Context, input *UpdateBannerInput, bannerId uint) error {
+	input.TagIds = lo.Uniq(input.TagIds)
+	err := b.bannerRepo.UpdateBanner(
+		ctx, input.TagIds, input.FeatureId, input.Content.Title, input.Content.Text, input.Content.Url, input.IsActive, bannerId,
+	)
+	return err
+}
+
 func NewBannerService(bannerRepo repo.Banner) *BannerService {
 	return &BannerService{
 		bannerRepo: bannerRepo,
