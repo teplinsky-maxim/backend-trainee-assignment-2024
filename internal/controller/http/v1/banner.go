@@ -20,6 +20,7 @@ func NewBannerRoutes(router *fiber.Router, bannerService service.Banner) {
 
 	(*router).Add("GET", "/user_banner/", r.getUserBannerHandler())
 	(*router).Add("GET", "/banner/", r.getBannerHandler())
+	(*router).Add("POST", "/banner/", r.createBannerHandler())
 }
 
 func (r *bannerRoutes) getUserBannerHandler() fiber.Handler {
@@ -62,5 +63,24 @@ func (r *bannerRoutes) getBannerHandler() fiber.Handler {
 			return err
 		}
 		return c.JSON(banners)
+	}
+}
+
+func (r *bannerRoutes) createBannerHandler() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		body := new(bannerService.CreateBannerInput)
+		if err := c.BodyParser(body); err != nil {
+			return c.SendStatus(http.StatusBadRequest)
+		}
+
+		role := c.Locals(auth.RoleCtxField).(auth.Role)
+		if role != auth.ADMIN {
+			return c.SendStatus(http.StatusUnauthorized)
+		}
+		banner, err := r.bannerService.CreateBanner(context.TODO(), body)
+		if err != nil {
+			return err
+		}
+		return c.JSON(banner)
 	}
 }

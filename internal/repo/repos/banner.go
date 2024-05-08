@@ -104,6 +104,39 @@ func (b *BannerRepo) GetBanner(ctx context.Context, tagId, featureId, limit, off
 	return result, nil
 }
 
+func (b *BannerRepo) CreateBanner(ctx context.Context, tagIds []uint, featureId uint, title, text, url string, isActive bool) (entity.BannerId, error) {
+	tx := b.postgres.DB.Begin()
+
+	banner := entity.Banner{
+		Title:     title,
+		Text:      text,
+		Url:       url,
+		FeatureId: featureId,
+		IsActive:  isActive,
+	}
+	if err := tx.Create(&banner).Error; err != nil {
+		tx.Rollback()
+		return entity.BannerId{}, err
+	}
+
+	bannerTags := make([]entity.BannerTag, len(tagIds))
+	for idx, tagId := range tagIds {
+		bt := entity.BannerTag{
+			BannerId: banner.ID,
+			TagId:    tagId,
+		}
+		bannerTags[idx] = bt
+	}
+	if err := tx.Create(&bannerTags).Error; err != nil {
+		tx.Rollback()
+		return entity.BannerId{}, err
+	}
+	if err := tx.Commit().Error; err != nil {
+		return entity.BannerId{}, err
+	}
+	return entity.BannerId{ID: banner.ID}, nil
+}
+
 func NewBannerRepo(postgres postgresql.Postgresql) *BannerRepo {
 	return &BannerRepo{
 		postgres: postgres,

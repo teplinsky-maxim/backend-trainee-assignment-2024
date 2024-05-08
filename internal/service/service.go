@@ -17,6 +17,7 @@ type Dependencies struct {
 type Banner interface {
 	GetUserBanner(ctx context.Context, input *banner.GetUserBannerInput) (entity.BannerWithTag, error)
 	GetBanner(ctx context.Context, input *banner.GetBannerInput) ([]entity.BannerWithTags, error)
+	CreateBanner(ctx context.Context, input *banner.CreateBannerInput) (entity.BannerId, error)
 }
 
 func NewServices(deps Dependencies) *Services {

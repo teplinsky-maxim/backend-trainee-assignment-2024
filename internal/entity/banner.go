@@ -18,3 +18,7 @@ type BannerWithTags struct {
 	Banner
 	Tags []uint
 }
+
+type BannerId struct {
+	ID uint
+}

@@ -12,3 +12,14 @@ type GetBannerInput struct {
 	Limit     *uint `query:"limit"`
 	Offset    *uint `query:"offset"`
 }
+
+type CreateBannerInput struct {
+	TagIds    []uint `json:"tag_ids"`
+	FeatureId uint   `json:"feature_id"`
+	Content   struct {
+		Title string `json:"title"`
+		Text  string `json:"text"`
+		Url   string `json:"url"`
+	} `json:"content"`
+	IsActive bool `json:"is_active"`
+}

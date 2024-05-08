@@ -125,3 +125,13 @@ func TestGetUserBanner(t *testing.T) {
 		})
 	}
 }
+
+func TestGetBanner(t *testing.T) {
+	// разные параметры
+	// проверить что все теги тянутся при where tagId =
+}
+
+func TestCreateBanner(t *testing.T) {
+	//проверить разные значения
+	//проверить, что тх роллбэчится на ошибке
+}
