@@ -11,10 +11,10 @@ type BannerService struct {
 	bannerRepo repo.Banner
 }
 
-func (b BannerService) GetUserBanner(ctx context.Context, input *GetUserBannerInput) (entity.BannerWithTag, error) {
+func (b BannerService) GetUserBanner(ctx context.Context, input *GetUserBannerInput) (entity.ProductionBanner, error) {
 	result, err := b.bannerRepo.GetUserBanner(ctx, input.TagId, input.FeatureId, input.UseLatestVersion)
 	if err != nil {
-		return entity.BannerWithTag{}, err
+		return entity.ProductionBanner{}, err
 	}
 	return result, nil
 }

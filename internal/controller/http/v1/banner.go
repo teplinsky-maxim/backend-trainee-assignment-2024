@@ -25,11 +25,17 @@ func NewBannerRoutes(router *fiber.Router, bannerService service.Banner) {
 	(*router).Add("DELETE", "/banner/:id", r.deleteBannerHandler())
 }
 
+func sendError(c *fiber.Ctx, errorCode int, err error) error {
+	return c.Status(errorCode).JSON(map[string]string{
+		"error": err.Error(),
+	})
+}
+
 func (r *bannerRoutes) getUserBannerHandler() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		params := new(bannerService.GetUserBannerInput)
 		if err := c.QueryParser(params); err != nil {
-			return c.SendStatus(http.StatusBadRequest)
+			return sendError(c, http.StatusBadRequest, err)
 		}
 
 		role := c.Locals(auth.RoleCtxField).(auth.Role)
@@ -39,7 +45,7 @@ func (r *bannerRoutes) getUserBannerHandler() fiber.Handler {
 			if errors.Is(repos.ErrBannerNotFound, err) {
 				return c.SendStatus(http.StatusNotFound)
 			} else if errors.Is(repos.BannerScanError, err) {
-				return c.SendStatus(http.StatusInternalServerError)
+				return sendError(c, http.StatusInternalServerError, err)
 			} else if errors.Is(repos.BannerIsNotActiveError, err) {
 				return c.SendStatus(http.StatusForbidden)
 			}

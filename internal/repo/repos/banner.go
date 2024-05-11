@@ -25,9 +25,9 @@ type BannerRepo struct {
 	postgres postgresql.Postgresql
 }
 
-func (b *BannerRepo) GetUserBanner(ctx context.Context, tagId uint, featureId uint, useLatestVersion bool) (entity.BannerWithTag, error) {
+func (b *BannerRepo) GetUserBanner(ctx context.Context, tagId uint, featureId uint, useLatestVersion bool) (entity.ProductionBanner, error) {
 	query := `
-SELECT b.id, b.title, b.text, b.url, b.feature_id, bt.tag_id as tag, b.is_active
+SELECT b.id, b.title, b.text, b.url, b.is_active
 FROM banners b
          JOIN banner_tags bt ON b.id = bt.banner_id
 WHERE bt.tag_id = $1 AND b.feature_id = $2;
@@ -37,19 +37,19 @@ WHERE bt.tag_id = $1 AND b.feature_id = $2;
 	row.Scan(&result)
 	// TODO: переделать на нормальную проверку понимания того, нашли мы результат или нет
 	if result.ID == 0 {
-		return entity.BannerWithTag{}, ErrBannerNotFound
+		return entity.ProductionBanner{}, ErrBannerNotFound
 	}
 	if result.IsActive == false {
 		userRole := ctx.Value(auth.RoleCtxField).(auth.Role)
 		if userRole == auth.ADMIN {
-			return result, nil
+			return result.ConvertToProductionBanner(), nil
 		} else if userRole == auth.USER {
-			return entity.BannerWithTag{}, BannerIsNotActiveError
+			return entity.ProductionBanner{}, BannerIsNotActiveError
 		} else {
 			panic("Unhandled user role " + strconv.Itoa(int(userRole)))
 		}
 	}
-	return result, nil
+	return result.ConvertToProductionBanner(), nil
 }
 
 func (b *BannerRepo) GetBanner(ctx context.Context, tagId, featureId, limit, offset *uint) ([]entity.BannerWithTags, error) {

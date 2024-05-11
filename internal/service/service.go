@@ -15,7 +15,7 @@ type Dependencies struct {
 }
 
 type Banner interface {
-	GetUserBanner(ctx context.Context, input *banner.GetUserBannerInput) (entity.BannerWithTag, error)
+	GetUserBanner(ctx context.Context, input *banner.GetUserBannerInput) (entity.ProductionBanner, error)
 	GetBanner(ctx context.Context, input *banner.GetBannerInput) ([]entity.BannerWithTags, error)
 	CreateBanner(ctx context.Context, input *banner.CreateBannerInput) (entity.BannerId, error)
 	UpdateBanner(ctx context.Context, input *banner.UpdateBannerInput, bannerId uint) error

@@ -29,10 +29,7 @@ func Run() {
 	}
 	services := service.NewServices(deps)
 
-	app := fiber.New(fiber.Config{
-		Prefork:     true,
-		Concurrency: 2000,
-	})
+	app := fiber.New()
 	v1.NewRouter(app, services)
 
 	app.Listen("0.0.0.0:3000")

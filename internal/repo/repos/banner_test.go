@@ -117,9 +117,13 @@ func TestGetUserBanner(t *testing.T) {
 				assert.Equal(t, tt.expectedErr, err)
 			} else {
 				if tt.userRole == auth.ADMIN {
-					assert.Equal(t, banner2.ID, userBanner.ID)
+					assert.Equal(t, banner2.Text, userBanner.Text)
+					assert.Equal(t, banner2.Title, userBanner.Title)
+					assert.Equal(t, banner2.Url, userBanner.Url)
 				} else {
-					assert.Equal(t, banner.ID, userBanner.ID)
+					assert.Equal(t, banner.Text, userBanner.Text)
+					assert.Equal(t, banner.Title, userBanner.Title)
+					assert.Equal(t, banner.Url, userBanner.Url)
 				}
 			}
 		})

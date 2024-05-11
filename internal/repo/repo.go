@@ -8,7 +8,7 @@ import (
 )
 
 type Banner interface {
-	GetUserBanner(ctx context.Context, tagId uint, featureId uint, useLatestVersion bool) (entity.BannerWithTag, error)
+	GetUserBanner(ctx context.Context, tagId uint, featureId uint, useLatestVersion bool) (entity.ProductionBanner, error)
 	GetBanner(ctx context.Context, tagId, featureId, offset, limit *uint) ([]entity.BannerWithTags, error)
 	CreateBanner(ctx context.Context, tagIds []uint, featureId uint, title, text, url string, isActive bool) (entity.BannerId, error)
 	UpdateBanner(ctx context.Context, tagIds []uint, featureId uint, title, text, url string, isActive bool, bannerId uint) error
