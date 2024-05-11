@@ -10,7 +10,8 @@ import (
 	"github.com/gofiber/fiber/v2/log"
 )
 
-func Run(configPath string) {
+func Run() {
+	//TODO: обернуть в singleton
 	conf, err := config.NewConfig(nil)
 	if err != nil {
 		log.Fatal(err)
@@ -20,10 +21,6 @@ func Run(configPath string) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	//err = postgres.Migrate()
-	//if err != nil {
-	//	log.Fatal(err)
-	//}
 
 	repositories := repo.NewRepositories(postgres)
 
@@ -32,8 +29,11 @@ func Run(configPath string) {
 	}
 	services := service.NewServices(deps)
 
-	app := fiber.New()
+	app := fiber.New(fiber.Config{
+		Prefork:     true,
+		Concurrency: 2000,
+	})
 	v1.NewRouter(app, services)
 
-	app.Listen("localhost:3000")
+	app.Listen("0.0.0.0:3000")
 }
