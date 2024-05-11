@@ -49,7 +49,6 @@ func FillDatabase() {
 }
 
 func generateBannerTags() []uint {
-
 	amount := gofakeit.IntRange(4, 12)
 	result := make([]uint, amount)
 	for i := 0; i < amount; i++ {

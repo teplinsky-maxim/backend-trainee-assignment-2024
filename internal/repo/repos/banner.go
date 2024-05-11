@@ -36,6 +36,7 @@ func (b *BannerRepo) GetUserBanner(ctx context.Context, tagId uint, featureId ui
 			return banner, err
 		}
 	} else {
+		// Если баннер выключили и он в кэше, то у нас не получится его выклюить. Это надо предусмотреть
 		banner, err = (*b.cache).Get(tagId, featureId)
 		if err != nil {
 			if errors.Is(err, cache.ElementDoesNotExistError) {

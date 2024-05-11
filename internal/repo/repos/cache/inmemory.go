@@ -29,7 +29,7 @@ type timedItem[T any] struct {
 }
 
 type InMemoryCache struct {
-	m      sync.Mutex
+	m      sync.RWMutex
 	values map[compositeKey]timedItem[entity.ProductionBanner]
 	ttl    time.Duration
 }
@@ -42,11 +42,12 @@ func NewInMemoryCache(ttl time.Duration) InMemoryCache {
 }
 
 func (r *InMemoryCache) Get(tagId, featureId uint) (entity.ProductionBanner, error) {
-	r.m.Lock()
-	defer r.m.Unlock()
-
 	key := newCompositeKey(tagId, featureId)
+
+	r.m.RLock()
 	item, ok := r.values[key]
+	r.m.RUnlock()
+
 	if !ok {
 		return entity.ProductionBanner{}, ElementDoesNotExistError
 	}
@@ -54,15 +55,20 @@ func (r *InMemoryCache) Get(tagId, featureId uint) (entity.ProductionBanner, err
 	if item.timeCreated.Before(now) {
 		return item.item, nil
 	}
+
+	r.m.Lock()
 	delete(r.values, key)
+	r.m.Unlock()
+
 	return entity.ProductionBanner{}, ElementDoesNotExistError
 }
 
 func (r *InMemoryCache) Set(featureId, tagId uint, banner entity.ProductionBanner) {
+	key := newCompositeKey(tagId, featureId)
+
 	r.m.Lock()
 	defer r.m.Unlock()
 
-	key := newCompositeKey(tagId, featureId)
 	r.values[key] = timedItem[entity.ProductionBanner]{
 		timeCreated: time.Now(),
 		item:        banner,
