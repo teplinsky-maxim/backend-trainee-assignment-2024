@@ -40,13 +40,13 @@ WHERE bt.tag_id = $1 AND b.feature_id = $2;
 		return entity.ProductionBanner{}, ErrBannerNotFound
 	}
 	if result.IsActive == false {
-		userRole := ctx.Value(auth.RoleCtxField).(auth.Role)
-		if userRole == auth.ADMIN {
+		role := auth.GetRoleFromCtx(&ctx)
+		if role.IsAdmin() {
 			return result.ConvertToProductionBanner(), nil
-		} else if userRole == auth.USER {
+		} else if role.IsUser() {
 			return entity.ProductionBanner{}, BannerIsNotActiveError
 		} else {
-			panic("Unhandled user role " + strconv.Itoa(int(userRole)))
+			panic("Unhandled user role " + strconv.Itoa(role.Code()))
 		}
 	}
 	return result.ConvertToProductionBanner(), nil

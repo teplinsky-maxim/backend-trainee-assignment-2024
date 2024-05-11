@@ -38,7 +38,7 @@ func (r *bannerRoutes) getUserBannerHandler() fiber.Handler {
 			return sendError(c, http.StatusBadRequest, err)
 		}
 
-		role := c.Locals(auth.RoleCtxField).(auth.Role)
+		role := auth.GetRoleFromFiberCtx(c)
 		ctx := context.WithValue(context.Background(), auth.RoleCtxField, role)
 		banner, err := r.bannerService.GetUserBanner(ctx, params)
 		if err != nil {
@@ -62,8 +62,8 @@ func (r *bannerRoutes) getBannerHandler() fiber.Handler {
 			return c.SendStatus(http.StatusBadRequest)
 		}
 
-		role := c.Locals(auth.RoleCtxField).(auth.Role)
-		if role != auth.ADMIN {
+		role := auth.GetRoleFromFiberCtx(c)
+		if !role.IsAdmin() {
 			return c.SendStatus(http.StatusUnauthorized)
 		}
 		banners, err := r.bannerService.GetBanner(context.TODO(), params)
@@ -81,8 +81,8 @@ func (r *bannerRoutes) createBannerHandler() fiber.Handler {
 			return c.SendStatus(http.StatusBadRequest)
 		}
 
-		role := c.Locals(auth.RoleCtxField).(auth.Role)
-		if role != auth.ADMIN {
+		role := auth.GetRoleFromFiberCtx(c)
+		if !role.IsAdmin() {
 			return c.SendStatus(http.StatusUnauthorized)
 		}
 		banner, err := r.bannerService.CreateBanner(context.TODO(), body)
@@ -104,8 +104,8 @@ func (r *bannerRoutes) updateBannerHandler() fiber.Handler {
 			return c.SendStatus(http.StatusBadRequest)
 		}
 
-		role := c.Locals(auth.RoleCtxField).(auth.Role)
-		if role != auth.ADMIN {
+		role := auth.GetRoleFromFiberCtx(c)
+		if !role.IsAdmin() {
 			return c.SendStatus(http.StatusUnauthorized)
 		}
 		err = r.bannerService.UpdateBanner(context.TODO(), body, uint(existingBannerId))
@@ -122,8 +122,8 @@ func (r *bannerRoutes) deleteBannerHandler() fiber.Handler {
 		if existingBannerId == -1 || err != nil {
 			return c.SendStatus(http.StatusBadRequest)
 		}
-		role := c.Locals(auth.RoleCtxField).(auth.Role)
-		if role != auth.ADMIN {
+		role := auth.GetRoleFromFiberCtx(c)
+		if !role.IsAdmin() {
 			return c.SendStatus(http.StatusUnauthorized)
 		}
 		err = r.bannerService.DeleteBanner(context.TODO(), &bannerService.DeleteBannerInput{}, uint(existingBannerId))
