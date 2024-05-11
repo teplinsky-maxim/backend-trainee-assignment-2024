@@ -2,6 +2,7 @@ package v1
 
 import (
 	"avito-backend-2024-trainee/internal/repo/repos"
+	"avito-backend-2024-trainee/internal/repo/repos/cache"
 	"avito-backend-2024-trainee/internal/service"
 	bannerService "avito-backend-2024-trainee/internal/service/banner"
 	"avito-backend-2024-trainee/pkg/middleware/auth"
@@ -13,6 +14,7 @@ import (
 
 type bannerRoutes struct {
 	bannerService service.Banner
+	cache         *cache.BannerCache
 }
 
 func NewBannerRoutes(router *fiber.Router, bannerService service.Banner) {

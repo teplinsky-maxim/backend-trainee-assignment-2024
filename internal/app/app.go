@@ -4,10 +4,12 @@ import (
 	"avito-backend-2024-trainee/config"
 	v1 "avito-backend-2024-trainee/internal/controller/http/v1"
 	"avito-backend-2024-trainee/internal/repo"
+	"avito-backend-2024-trainee/internal/repo/repos/cache"
 	"avito-backend-2024-trainee/internal/service"
 	"avito-backend-2024-trainee/pkg/postgresql"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/log"
+	"time"
 )
 
 func Run() {
@@ -22,12 +24,13 @@ func Run() {
 		log.Fatal(err)
 	}
 
-	repositories := repo.NewRepositories(postgres)
+	inMemoryCache := cache.NewInMemoryCache(5 * time.Minute)
+	repositories := repo.NewRepositories(postgres, &inMemoryCache)
 
-	deps := service.Dependencies{
+	serviceDeps := service.Dependencies{
 		Repositories: *repositories,
 	}
-	services := service.NewServices(deps)
+	services := service.NewServices(serviceDeps)
 
 	app := fiber.New()
 	v1.NewRouter(app, services)

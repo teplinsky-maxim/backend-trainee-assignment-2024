@@ -12,7 +12,7 @@ type BannerService struct {
 }
 
 func (b BannerService) GetUserBanner(ctx context.Context, input *GetUserBannerInput) (entity.ProductionBanner, error) {
-	result, err := b.bannerRepo.GetUserBanner(ctx, input.TagId, input.FeatureId, input.UseLatestVersion)
+	result, err := b.bannerRepo.GetUserBanner(ctx, input.TagId, input.FeatureId, input.UseLastRevision)
 	if err != nil {
 		return entity.ProductionBanner{}, err
 	}

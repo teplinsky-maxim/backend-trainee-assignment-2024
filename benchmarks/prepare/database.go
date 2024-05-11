@@ -3,10 +3,12 @@ package prepare
 import (
 	"avito-backend-2024-trainee/config"
 	"avito-backend-2024-trainee/internal/repo"
+	"avito-backend-2024-trainee/internal/repo/repos/cache"
 	"avito-backend-2024-trainee/pkg/postgresql"
 	"context"
 	"github.com/brianvoe/gofakeit/v6"
 	"github.com/samber/lo"
+	"time"
 )
 
 const (
@@ -25,7 +27,8 @@ func FillDatabase() {
 	if err != nil {
 		panic(err)
 	}
-	repositories := repo.NewRepositories(postgres)
+	inMemoryCache := cache.NewInMemoryCache(5 * time.Minute)
+	repositories := repo.NewRepositories(postgres, &inMemoryCache)
 	for i := 0; i < 10000; i++ {
 		tags := generateBannerTags()
 		var featureId uint

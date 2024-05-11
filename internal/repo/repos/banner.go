@@ -2,6 +2,7 @@ package repos
 
 import (
 	"avito-backend-2024-trainee/internal/entity"
+	"avito-backend-2024-trainee/internal/repo/repos/cache"
 	"avito-backend-2024-trainee/internal/utils/database"
 	"avito-backend-2024-trainee/pkg/middleware/auth"
 	"avito-backend-2024-trainee/pkg/postgresql"
@@ -23,9 +24,35 @@ var (
 
 type BannerRepo struct {
 	postgres postgresql.Postgresql
+	cache    *cache.BannerCache
 }
 
-func (b *BannerRepo) GetUserBanner(ctx context.Context, tagId uint, featureId uint, useLatestVersion bool) (entity.ProductionBanner, error) {
+func (b *BannerRepo) GetUserBanner(ctx context.Context, tagId uint, featureId uint, useLastRevision bool) (entity.ProductionBanner, error) {
+	banner := entity.ProductionBanner{}
+	var err error
+	if useLastRevision {
+		banner, err = queryBannerFromDatabase(b.postgres, ctx, tagId, featureId)
+		if err != nil {
+			return banner, err
+		}
+	} else {
+		banner, err = (*b.cache).Get(tagId, featureId)
+		if err != nil {
+			if errors.Is(err, cache.ElementDoesNotExistError) {
+				banner, err = queryBannerFromDatabase(b.postgres, ctx, tagId, featureId)
+				if err != nil {
+					return banner, err
+				}
+			}
+		} else {
+			return banner, err
+		}
+	}
+	(*b.cache).Set(featureId, tagId, banner)
+	return banner, err
+}
+
+func queryBannerFromDatabase(db postgresql.Postgresql, ctx context.Context, tagId uint, featureId uint) (entity.ProductionBanner, error) {
 	query := `
 SELECT b.id, b.title, b.text, b.url, b.is_active
 FROM banners b
@@ -33,7 +60,7 @@ FROM banners b
 WHERE bt.tag_id = $1 AND b.feature_id = $2;
 `
 	var result entity.BannerWithTag
-	row := b.postgres.DB.Raw(query, tagId, featureId)
+	row := db.DB.Raw(query, tagId, featureId)
 	row.Scan(&result)
 	// TODO: переделать на нормальную проверку понимания того, нашли мы результат или нет
 	if result.ID == 0 {
@@ -288,8 +315,9 @@ func (b *BannerRepo) DeleteBanner(ctx context.Context, bannerId uint) error {
 	return nil
 }
 
-func NewBannerRepo(postgres postgresql.Postgresql) *BannerRepo {
+func NewBannerRepo(postgres postgresql.Postgresql, cache *cache.BannerCache) *BannerRepo {
 	return &BannerRepo{
 		postgres: postgres,
+		cache:    cache,
 	}
 }
