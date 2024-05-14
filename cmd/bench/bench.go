@@ -20,8 +20,7 @@ import (
 //Maximum Response Time (per second): 1.2736s
 
 func main() {
-	//prepare.FillDatabase()
-	Bench()
+	prepare.FillDatabase()
 }
 
 func Bench() {

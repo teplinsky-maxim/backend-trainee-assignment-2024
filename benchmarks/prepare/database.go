@@ -23,12 +23,12 @@ func FillDatabase() {
 	if err != nil {
 		panic(err)
 	}
-	postgres, err := postgresql.NewConnection(conf)
+	postgres, err := postgresql.NewTestConnection(conf)
 	if err != nil {
 		panic(err)
 	}
 	inMemoryCache := cache.NewInMemoryCache(5 * time.Minute)
-	repositories := repo.NewRepositories(postgres, &inMemoryCache)
+	repositories := repo.NewRepositories(postgresql.Postgresql(postgres), &inMemoryCache)
 	for i := 0; i < 10000; i++ {
 		tags := generateBannerTags()
 		var featureId uint

@@ -21,6 +21,6 @@ type Repositories struct {
 
 func NewRepositories(postgres postgresql.Postgresql, cache cache.BannerCache) *Repositories {
 	return &Repositories{
-		Banner: repos.NewBannerRepo(postgres, &cache),
+		Banner: repos.NewBannerRepo(postgres, cache),
 	}
 }

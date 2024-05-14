@@ -24,7 +24,7 @@ var (
 
 type BannerRepo struct {
 	postgres postgresql.Postgresql
-	cache    *cache.BannerCache
+	cache    cache.BannerCache
 }
 
 func (b *BannerRepo) GetUserBanner(ctx context.Context, tagId uint, featureId uint, useLastRevision bool) (entity.ProductionBanner, error) {
@@ -37,7 +37,7 @@ func (b *BannerRepo) GetUserBanner(ctx context.Context, tagId uint, featureId ui
 		}
 	} else {
 		// Если баннер выключили и он в кэше, то у нас не получится его выклюить. Это надо предусмотреть
-		banner, err = (*b.cache).Get(tagId, featureId)
+		banner, err = b.cache.Get(tagId, featureId)
 		if err != nil {
 			if errors.Is(err, cache.ElementDoesNotExistError) {
 				banner, err = queryBannerFromDatabase(b.postgres, ctx, tagId, featureId)
@@ -49,7 +49,7 @@ func (b *BannerRepo) GetUserBanner(ctx context.Context, tagId uint, featureId ui
 			return banner, err
 		}
 	}
-	(*b.cache).Set(featureId, tagId, banner)
+	b.cache.Set(featureId, tagId, banner)
 	return banner, err
 }
 
@@ -316,7 +316,7 @@ func (b *BannerRepo) DeleteBanner(ctx context.Context, bannerId uint) error {
 	return nil
 }
 
-func NewBannerRepo(postgres postgresql.Postgresql, cache *cache.BannerCache) *BannerRepo {
+func NewBannerRepo(postgres postgresql.Postgresql, cache cache.BannerCache) *BannerRepo {
 	return &BannerRepo{
 		postgres: postgres,
 		cache:    cache,

@@ -3,12 +3,16 @@ package repos
 import (
 	"avito-backend-2024-trainee/config"
 	"avito-backend-2024-trainee/internal/entity"
+	"avito-backend-2024-trainee/internal/repo/repos/cache"
 	"avito-backend-2024-trainee/internal/utils/database"
 	"avito-backend-2024-trainee/pkg/middleware/auth"
 	"avito-backend-2024-trainee/pkg/postgresql"
 	"context"
+	"fmt"
+	"github.com/brianvoe/gofakeit/v6"
 	"github.com/stretchr/testify/assert"
 	"testing"
+	"time"
 )
 
 func TestGetUserBanner(t *testing.T) {
@@ -76,7 +80,8 @@ func TestGetUserBanner(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	bannerRepo := NewBannerRepo(postgresql.Postgresql(connection))
+	inMemoryCache := cache.NewInMemoryCache(5 * time.Minute)
+	bannerRepo := NewBannerRepo(postgresql.Postgresql(connection), &inMemoryCache)
 
 	tableName, _ := database.GetTableName(postgresql.Postgresql(connection), entity.Banner{})
 	connection.SetUp(tableName)
@@ -126,6 +131,70 @@ func TestGetUserBanner(t *testing.T) {
 					assert.Equal(t, banner.Url, userBanner.Url)
 				}
 			}
+		})
+	}
+}
+
+func BenchmarkGetUserBanner(b *testing.B) {
+	conf, err := config.NewConfigWithDiscover(nil)
+	if err != nil {
+		panic(err)
+	}
+	connection, err := postgresql.NewTestConnection(conf)
+	if err != nil {
+		panic(err)
+	}
+	inMemoryCache := cache.NewInMemoryCache(5 * time.Minute)
+	bannerRepo := NewBannerRepo(postgresql.Postgresql(connection), &inMemoryCache)
+
+	// Parameters for GetUserBanner function
+	tagId := uint(1)     // Replace with actual tag ID
+	featureId := uint(1) // Replace with actual feature ID
+
+	const (
+		CommonTag1    = 5
+		CommonTag2    = 10
+		CommonFeature = 14
+	)
+
+	var table []struct{ tagId, featureId uint }
+	for i := 0; i < 20; i++ {
+		if i%4 == 0 {
+			featureId = CommonFeature
+		} else {
+			featureId = gofakeit.UintRange(1, 1000)
+		}
+
+		if i%3 == 0 {
+			tagId = CommonTag1
+		} else if i%4 == 0 {
+			tagId = CommonTag2
+		} else {
+			tagId = gofakeit.UintRange(1, 1000)
+		}
+		table = append(table, struct{ tagId, featureId uint }{
+			tagId:     tagId,
+			featureId: featureId,
+		})
+	}
+
+	// Reset the benchmark timer
+	b.ResetTimer()
+
+	for idx, v := range table {
+		b.Run(fmt.Sprintf("input_size_%d", idx), func(b *testing.B) {
+			ctx := context.WithValue(context.Background(), auth.RoleCtxField, auth.USER)
+			_, _ = bannerRepo.GetUserBanner(ctx, v.tagId, v.featureId, true)
+			//featureId = gofakeit.UintRange(1, 1000)
+			//title := gofakeit.BookTitle()
+			//text := gofakeit.Sentence(gofakeit.IntRange(4, 10))
+			//url := gofakeit.URL()
+			//b.StopTimer()
+			//bannerRepo.UpdateBanner(
+			//	context.Background(), generateBannerTags(), featureId, title, text, url, true,
+			//	gofakeit.UintRange(1, 10000),
+			//)
+			b.StartTimer()
 		})
 	}
 }
