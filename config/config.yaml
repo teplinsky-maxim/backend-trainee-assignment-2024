@@ -1,0 +1,6 @@
+postgresql:
+  address: "localhost"
+  port: 5432
+  user: "user"
+  password: "password"
+  database: "avito2024"

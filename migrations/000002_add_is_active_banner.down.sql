@@ -1,0 +1,6 @@
+BEGIN;
+
+ALTER TABLE banners
+    DROP COLUMN IF EXISTS is_active;
+
+COMMIT;

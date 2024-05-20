@@ -1,0 +1,63 @@
+version: '3.8'
+
+x-variables: &default-vars
+  DB_HOST: postgres-db
+  DB_PORT: 5432
+  DB_USER: user
+  DB_PASSWORD: password
+  DB_NAME: avito2024
+
+services:
+  db:
+    image: postgres:15
+    container_name: postgres-db
+    environment:
+      POSTGRES_USER: ${DB_USER:-user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-password}
+      POSTGRES_DB: ${DB_NAME:-avito2024}
+      DB_USER: ${DB_USER:-user}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  migrate:
+    build:
+      context: .
+      dockerfile: Dockerfile.migrate
+    container_name: migrate
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      <<: *default-vars
+    entrypoint: [
+      "migrate",
+      "-path", "/migrations",
+      "-database", "postgres://${DB_USER:-user}:${DB_PASSWORD:-password}@${DB_HOST:-postgres-db}:${DB_PORT:-5432}/${DB_NAME:-avito2024}?sslmode=disable",
+      "up"
+    ]
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: go-app
+    depends_on:
+      - db
+      - migrate
+    environment:
+      <<: *default-vars
+      DB_ADDRESS: ${DB_HOST:-postgres-db}
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/app
+
+volumes:
+  pgdata:
