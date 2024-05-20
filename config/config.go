@@ -15,11 +15,11 @@ type (
 	}
 
 	Postgresql struct {
-		Address  string `yaml:"address"`
-		Port     int    `yaml:"port"`
-		User     string `yaml:"user"`
-		Password string `yaml:"password"`
-		Database string `yaml:"database"`
+		Address  string `yaml:"address" env:"DB_HOST"`
+		Port     int    `yaml:"port" env:"DB_PORT"`
+		User     string `yaml:"user" env:"DB_USER"`
+		Password string `yaml:"password" env:"DB_PASSWORD"`
+		Database string `yaml:"database" env:"DB_NAME"`
 	}
 )
 
